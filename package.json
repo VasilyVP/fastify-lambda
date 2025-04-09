@@ -1,8 +1,8 @@
 {
   "name": "fastify-lambda",
   "version": "1.0.0",
-  "description": "Fastify server for lambda container deployment",
-  "author": "",
+  "description": "Fastify server containerized for AWS Lambda deployment",
+  "author": "VasilyVP",
   "license": "ISC",
   "type": "module",
   "private": false,
