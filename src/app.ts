@@ -9,6 +9,9 @@ const app = Fastify({
 app.setValidatorCompiler(validatorCompiler);
 app.setSerializerCompiler(serializerCompiler);
 
+app.get('/', () => {
+    return { root: 'value' };
+});
 app.get('/check', () => {
     return { hello: 'world' };
 });
