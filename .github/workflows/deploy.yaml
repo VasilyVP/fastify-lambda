@@ -43,6 +43,14 @@ jobs:
           docker build -t $IMAGE_URI .
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
 
+      - name: Delete old Docker image
+        run: |
+          set -e
+          IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY_NAME:*"
+          echo "Deleting old Docker image: $IMAGE_URI"
+          aws ecr batch-delete-image --repository-name $ECR_REPOSITORY_NAME --image-ids imageTag=latest || true
+          echo "Old Docker image deleted."
+          
       - name: Push Docker image to ECR
         run: |
           docker push $IMAGE_URI
