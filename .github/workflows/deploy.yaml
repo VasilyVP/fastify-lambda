@@ -7,8 +7,8 @@ on:
 
 env:
   AWS_REGION: us-east-2
-  ECR_REPOSITORY: ${{ environments.ECR_REPOSITORY }}
-  AWS_ROLE: ${{ environments.AWS_ROLE }}
+  ECR_REPOSITORY: ${{ variables.ECR_REPOSITORY }}
+  AWS_ROLE: ${{ variables.AWS_ROLE }}
   LAMBDA_FUNCTION_NAME: fastify
 
 jobs:
@@ -52,7 +52,7 @@ jobs:
           set -e
           
           IMAGE_URI="$IMAGE_URI"
-          ROLE_ARN="${{ environments.LAMBDA_ROLE_ARN }}"
+          ROLE_ARN="${{ variables.LAMBDA_ROLE_ARN }}"
           
           echo "Checking if function '$LAMBDA_FUNCTION_NAME' exists..."
           
