@@ -45,20 +45,17 @@ jobs:
 
       - name: Delete old Docker image
         run: |
-          set -e
           IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY_NAME:*"
           echo "Deleting old Docker image: $IMAGE_URI"
           aws ecr batch-delete-image --repository-name $ECR_REPOSITORY_NAME --image-ids imageTag=latest || true
           echo "Old Docker image deleted."
-          
+
       - name: Push Docker image to ECR
         run: |
           docker push $IMAGE_URI
 
       - name: Create or update Lambda function
-        run: |
-          set -e
-          
+        run: |          
           IMAGE_URI="$IMAGE_URI"
           ROLE_ARN="${{ vars.LAMBDA_ROLE_ARN }}"
           
