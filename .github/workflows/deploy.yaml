@@ -1,0 +1,73 @@
+name: Deploy to AWS Lambda (Container)
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: us-east-2
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+  AWS_ROLE: ${{ secrets.AWS_ROLE }}
+  LAMBDA_FUNCTION_NAME: fastify
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE }}
+          role-session-name: deploy-lambda
+          role-duration-seconds: 3600
+          role-skip-session-tagging: true
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        run: |
+          IMAGE_TAG=latest
+          IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG
+          docker build -t $IMAGE_URI .
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push $IMAGE_URI
+
+      - name: Create or update Lambda function
+        run: |
+          set -e
+          
+          IMAGE_URI="$IMAGE_URI"
+          ROLE_ARN="${{ secrets.LAMBDA_ROLE_ARN }}"
+          
+          echo "Checking if function '$LAMBDA_FUNCTION_NAME' exists..."
+          
+          if aws lambda get-function --function-name "$LAMBDA_FUNCTION_NAME" > /dev/null 2>&1; then
+            echo "Function exists. Updating..."
+            aws lambda update-function-code \
+              --function-name "$LAMBDA_FUNCTION_NAME" \
+              --image-uri "$IMAGE_URI"
+          else
+            echo "Function does not exist. Creating..."
+            aws lambda create-function \
+              --function-name "$LAMBDA_FUNCTION_NAME" \
+              --package-type Image \
+              --code ImageUri="$IMAGE_URI" \
+              --role "$ROLE_ARN" \
+              --timeout 15 \
+              --memory-size 128
+          fi
